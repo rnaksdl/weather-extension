@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en" style="background-color: #000000; color-scheme: dark;">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>St. Joseph, MO — Weather</title>
+  
+  <!-- Critical anti-flash style block -->
+  <style>
+    html, body {
+      background-color: #000000 !important;
+      color: #ffffff;
+      margin: 0;
+      padding: 0;
+    }
+  </style>
+
+  <style>
+    :root {
+      --bg-void: #000000;
+      --glass-border: rgba(255, 255, 255, 0.16);
+      --glass-highlight: rgba(255, 255, 255, 0.32);
+      --text-primary: #ffffff;
+      --text-secondary: rgba(235, 235, 245, 0.65);
+      --text-tertiary: rgba(235, 235, 245, 0.40);
+      --accent-blue: #5ac8fa;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      background-color: var(--bg-void);
+      color: var(--text-primary);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      perspective: 1200px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .ambient-glow {
+      position: fixed;
+      inset: -10%;
+      pointer-events: none;
+      z-index: 0;
+      background:
+        radial-gradient(circle at 32% 20%, rgba(56, 132, 255, 0.18), transparent 44%),
+        radial-gradient(circle at 70% 80%, rgba(90, 200, 250, 0.14), transparent 48%),
+        radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.03), transparent 65%);
+      transition: transform 0.25s ease-out;
+    }
+
+    .weather-shell {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 520px;
+      height: 100%;
+      max-height: 920px;
+      border-radius: 34px;
+      padding: clamp(16px, 2.4vh, 24px) 24px clamp(16px, 2.2vh, 22px);
+      background: linear-gradient(
+        145deg,
+        rgba(46, 46, 54, 0.44) 0%,
+        rgba(16, 16, 20, 0.58) 100%
+      );
+      backdrop-filter: blur(38px) saturate(195%);
+      -webkit-backdrop-filter: blur(38px) saturate(195%);
+      border: 1px solid var(--glass-border);
+      box-shadow:
+        0 32px 75px rgba(0, 0, 0, 0.9),
+        inset 0 1px 1px var(--glass-highlight),
+        inset 0 -1px 1px rgba(255, 255, 255, 0.06);
+      transform-style: preserve-3d;
+      will-change: transform;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .glass-sheen {
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      z-index: 2;
+      background: radial-gradient(
+        circle 320px at var(--mx, 50%) var(--my, 20%),
+        rgba(255, 255, 255, 0.13),
+        rgba(255, 255, 255, 0.03) 45%,
+        transparent 75%
+      );
+      opacity: 0.85;
+      transition: opacity 0.3s ease;
+    }
+
+    .hero,
+    .forecast-card {
+      position: relative;
+      z-index: 3;
+      transform: translateZ(14px);
+    }
+
+    .hero {
+      text-align: center;
+      margin-bottom: clamp(12px, 1.8vh, 18px);
+      flex-shrink: 0;
+    }
+
+    .location {
+      font-size: clamp(19px, 2.3vh, 23px);
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+    }
+
+    .hero-temp {
+      font-size: clamp(54px, 7.5vh, 76px);
+      font-weight: 200;
+      line-height: 1.0;
+      letter-spacing: -0.04em;
+      margin: 2px 0 4px;
+      padding-left: 16px;
+      background: linear-gradient(180deg, #ffffff 35%, rgba(255, 255, 255, 0.72) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-condition {
+      font-size: clamp(14px, 1.7vh, 16px);
+      font-weight: 500;
+      color: var(--text-secondary);
+      letter-spacing: -0.01em;
+    }
+
+    .hero-meta {
+      margin-top: 5px;
+      font-size: clamp(13px, 1.5vh, 14px);
+      font-weight: 500;
+      color: var(--text-primary);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .forecast-card {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      border-radius: 22px;
+      padding: 6px 18px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    }
+
+    .forecast-list {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+    }
+
+    .forecast-row {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: 72px 54px 34px 1fr 34px;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+      cursor: pointer;
+      border-radius: 8px;
+      padding: 0 6px;
+      transition: background 0.18s ease, transform 0.15s ease;
+    }
+
+    .forecast-row:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .forecast-row:active {
+      transform: scale(0.985);
+    }
+
+    .forecast-row:last-child {
+      border-bottom: none;
+    }
+
+    .day-name {
+      font-size: clamp(13.5px, 1.65vh, 15px);
+      font-weight: 500;
+      color: var(--text-primary);
+      letter-spacing: -0.01em;
+    }
+
+    .day-status {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+    }
+
+    .precip-val {
+      font-weight: 600;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .temp-low {
+      font-size: clamp(13.5px, 1.65vh, 15px);
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .temp-high {
+      font-size: clamp(13.5px, 1.65vh, 15px);
+      font-weight: 500;
+      color: var(--text-primary);
+      text-align: left;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .range-track {
+      position: relative;
+      height: 5px;
+      width: 100%;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.12);
+      overflow: hidden;
+    }
+
+    .range-fill {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #5ac8fa 0%, #ffd60a 55%, #ff9f0a 100%);
+      box-shadow: 0 0 8px rgba(90, 200, 250, 0.35);
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: rgba(0, 0, 0, 0.56);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      cursor: pointer;
+      transition: opacity 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .modal-backdrop.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .detail-card {
+      width: 100%;
+      max-width: 340px;
+      border-radius: 28px;
+      padding: 20px 22px 20px;
+      background: rgba(22, 22, 28, 0.90);
+      backdrop-filter: blur(44px) saturate(180%);
+      -webkit-backdrop-filter: blur(44px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      box-shadow:
+        0 28px 65px rgba(0, 0, 0, 0.88),
+        inset 0 1px 0 rgba(255, 255, 255, 0.24);
+      transform: scale(0.93) translateY(10px);
+      transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .modal-backdrop.active .detail-card {
+      transform: scale(1) translateY(0);
+    }
+
+    .detail-top {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+    }
+
+    .detail-date-group {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .detail-title {
+      font-size: 19px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+    }
+
+    .detail-temps {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+
+    .detail-high {
+      font-size: 30px;
+      font-weight: 300;
+      letter-spacing: -0.03em;
+      color: var(--text-primary);
+    }
+
+    .detail-low {
+      font-size: 20px;
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      color: var(--text-secondary);
+    }
+
+    .detail-summary {
+      font-size: 13.5px;
+      line-height: 1.45;
+      color: rgba(255, 255, 255, 0.88);
+    }
+
+    .detail-metrics {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .metric-pill {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 10px 10px 9px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .metric-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--text-tertiary);
+    }
+
+    .metric-value {
+      font-size: 16px;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+      font-variant-numeric: tabular-nums;
+    }
+  </style>
+</head>
+<body style="background-color: #000000;">
+  <div class="ambient-glow" id="ambient-glow"></div>
+
+  <main class="weather-shell" id="weather-card">
+    <div class="glass-sheen" id="glass-sheen"></div>
+
+    <section class="hero">
+      <h1 class="location">St. Joseph</h1>
+      <div class="hero-temp" id="current-temp">--°</div>
+      <div class="hero-condition" id="current-cond">Connecting to NOAA…</div>
+      <div class="hero-meta">
+        <span id="today-hl">H:--°  L:--°</span>
+        <span class="precip-val" id="current-precip">--%</span>
+      </div>
+    </section>
+
+    <section class="forecast-card">
+      <div class="forecast-list" id="forecast-list"></div>
+    </section>
+  </main>
+
+  <div class="modal-backdrop" id="detail-modal">
+    <div class="detail-card">
+      <div class="detail-top">
+        <div class="detail-date-group">
+          <h2 class="detail-title" id="modal-day-title">Today</h2>
+        </div>
+        <div class="detail-temps">
+          <span class="detail-high" id="modal-big-high">--°</span>
+          <span class="detail-low" id="modal-big-low">--°</span>
+        </div>
+      </div>
+
+      <p class="detail-summary" id="modal-summary-text">Loading forecast details...</p>
+
+      <div class="detail-metrics">
+        <div class="metric-pill">
+          <span class="metric-label">Precip</span>
+          <span class="metric-value" id="modal-precip">--%</span>
+        </div>
+        <div class="metric-pill">
+          <span class="metric-label">Wind</span>
+          <span class="metric-value" id="modal-wind">-- mph</span>
+        </div>
+        <div class="metric-pill">
+          <span class="metric-label">Humidity</span>
+          <span class="metric-value" id="modal-humidity">--%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="weather.js"></script>
+</body>
+</html>
