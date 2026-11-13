@@ -2,7 +2,6 @@
   "manifest_version": 3,
   "name": "Dark Weather New Tab",
   "version": "1.0",
-  "description": "Dark glass weather forecast for St. Joseph, MO on every new tab.",
   "chrome_url_overrides": {
     "newtab": "weather.html"
   },

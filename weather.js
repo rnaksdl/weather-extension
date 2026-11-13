@@ -241,8 +241,9 @@ async function loadWeather() {
       const high = Math.round(d.high);
       const pStyle = getPrecipInterpolation(precip, d.summary);
 
-      const leftPct = ((d.low - overallMin) / tempSpan) * 100;
       const widthPct = Math.max(((d.high - d.low) / tempSpan) * 100, 10);
+      const leftPct = Math.min(((d.low - overallMin) / tempSpan) * 100, 100 - widthPct);
+      const rightPct = Math.max(0, 100 - leftPct - widthPct);
 
       const row = document.createElement("div");
       row.className = "forecast-row";
@@ -253,10 +254,12 @@ async function loadWeather() {
         </div>
         <span class="temp-low">${low}°</span>
         <div class="range-track">
-          <div class="range-fill" style="left: ${leftPct}%; width: ${widthPct}%;"></div>
+          <div class="range-mask" style="left: 0; width: ${leftPct}%;"></div>
+          <div class="range-mask" style="right: 0; width: ${rightPct}%;"></div>
         </div>
         <span class="temp-high">${high}°</span>
       `;
+
 
       row.addEventListener("click", (e) => {
         e.stopPropagation();
